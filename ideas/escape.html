@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Escape Express</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: linear-gradient(to top, #b2dfdb, #e1bee7);
+      overflow: hidden;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    canvas {
+      background-color: #ffffff;
+      border-bottom: 5px solid #4db6ac;
+      box-shadow: 0 0 20px rgba(0,0,0,0.2);
+    }
+
+    #overlay {
+      position: absolute;
+      top: 30%;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      background: rgba(255,255,255,0.95);
+      padding: 20px 30px;
+      border-radius: 15px;
+      display: none;
+      box-shadow: 0 0 15px rgba(0,0,0,0.3);
+    }
+
+    #overlay h2 {
+      margin-bottom: 10px;
+    }
+
+    #overlay button {
+      padding: 10px 20px;
+      background-color: #7e57c2;
+      color: white;
+      border: none;
+      border-radius: 20px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #scoreDisplay {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 18px;
+      font-weight: bold;
+      background: rgba(255,255,255,0.8);
+      padding: 5px 15px;
+      border-radius: 15px;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="gameCanvas" width="400" height="500"></canvas>
+<div id="scoreDisplay">Distancia: 0 m | Nivel: 1</div>
+
+<div id="overlay">
+  <h2>¡Perdiste!</h2>
+  <p id="finalScore">Recorriste 0 metros</p>
+  <button onclick="startGame()">Reiniciar</button>
+</div>
+
+<script>
+  const canvas = document.getElementById("gameCanvas");
+  const ctx = canvas.getContext("2d");
+  const scoreDisplay = document.getElementById("scoreDisplay");
+  const overlay = document.getElementById("overlay");
+  const finalScore = document.getElementById("finalScore");
+
+  let player, obstacles, gravity, jumpForce, score, speed, gameInterval;
+  let jumpCount = 0;
+  const maxJumps = 4;
+  let lastLevel = 1;
+
+  function startGame() {
+    overlay.style.display = "none";
+    player = { x: 50, y: 420, width: 30, height: 30, velocityY: 0 };
+    gravity = 1.2;
+    jumpForce = -14;
+    jumpCount = 0;
+    obstacles = [];
+    score = 0;
+    speed = 3;
+    lastLevel = 1;
+
+    clearInterval(gameInterval);
+    gameInterval = setInterval(updateGame, 1000 / 60);
+    spawnObstacle();
+  }
+
+  function spawnObstacle() {
+    const height = 30 + Math.random() * 30;
+    obstacles.push({ x: 400, y: 470 - height, width: 30, height: height });
+
+    const delay = 1500 + Math.random() * 1500;
+    setTimeout(spawnObstacle, delay);
+  }
+
+  function updateGame() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Ground
+    ctx.fillStyle = "#4db6ac";
+    ctx.fillRect(0, 470, canvas.width, 30);
+
+    // Player
+    player.velocityY += gravity;
+    player.y += player.velocityY;
+
+    if (player.y >= 420) {
+      player.y = 420;
+      player.velocityY = 0;
+      jumpCount = 0;
+    }
+
+    // Color por nivel
+    const level = Math.floor(score / 20) + 1;
+    if (level !== lastLevel) {
+      speed += 0.3;
+      lastLevel = level;
+    }
+
+    const colors = ["#7e57c2", "#42a5f5", "#66bb6a", "#ffca28", "#ef5350"];
+    ctx.fillStyle = colors[(level - 1) % colors.length];
+    ctx.fillRect(player.x, player.y, player.width, player.height);
+
+    // Obstacles
+    ctx.fillStyle = "#f44336";
+    for (let i = 0; i < obstacles.length; i++) {
+      const obs = obstacles[i];
+      obs.x -= speed;
+      ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+
+      if (
+        player.x < obs.x + obs.width &&
+        player.x + player.width > obs.x &&
+        player.y < obs.y + obs.height &&
+        player.y + player.height > obs.y
+      ) {
+        return gameOver();
+      }
+    }
+
+    obstacles = obstacles.filter(o => o.x + o.width > 0);
+
+    score += 0.1;
+    scoreDisplay.textContent = `Distancia: ${Math.floor(score)} m | Nivel: ${level}`;
+  }
+
+  function gameOver() {
+    clearInterval(gameInterval);
+    finalScore.textContent = `Recorriste ${Math.floor(score)} metros`;
+    overlay.style.display = "block";
+  }
+
+  function jump() {
+    if (jumpCount < maxJumps) {
+      player.velocityY = jumpForce;
+      jumpCount++;
+    }
+  }
+
+  window.addEventListener("touchstart", jump);
+  window.addEventListener("click", jump);
+
+  startGame();
+</script>
+
+</body>
+</html>

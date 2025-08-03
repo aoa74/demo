@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>I don't know</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body.inicio {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(to bottom right, #fff0f5, #e6f7ff);
+      font-family: 'DM Sans', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      text-align: center;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 30px;
+      border-radius: 24px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+      animation: fadeIn 1.2s ease;
+      max-width: 500px;
+      width: 100%;
+    }
+
+    .avatar {
+      width: 130px;
+      margin-bottom: 20px;
+      border-radius: 50%;
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+      animation: popIn 0.8s ease;
+    }
+
+    h1 {
+      font-size: 2em;
+      color: #333;
+      margin-bottom: 24px;
+    }
+
+    .botones {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .botones a {
+      text-decoration: none;
+      background: linear-gradient(90deg, #ffdee9 0%, #b5fffc 100%);
+      color: #333;
+      font-weight: bold;
+      padding: 12px 20px;
+      border-radius: 14px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      font-size: 1rem;
+    }
+
+    .botones a:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.8); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 24px;
+      }
+
+      .avatar {
+        width: 100px;
+      }
+
+      h1 {
+        font-size: 1.6em;
+      }
+
+      .botones a {
+        font-size: 0.95rem;
+        padding: 10px 16px;
+      }
+    }
+  </style>
+</head>
+<body class="inicio">
+  <div class="container">
+    <img src="assets/sancris.png" class="avatar" alt="Amiga Pixelart">
+    <h1>Bienvenida💫</h1>
+    <div class="botones">
+      <a href="ideas/ideas.html">🕹️ Click Rush!</a>
+      <a href="pizarra/pizarra.html">🎨 Pizarra Mágica</a>
+      <a href="ideas/memoria.html">🧠 Memoria visual</a>
+      <a href="ideas/reaccion.html">⚡ Reacción rápida</a>
+      <a href="ideas/escape.html">🕹️ Escape con obstáculos</a>
+      <a href="ideas/tiro.html">🎯 Tiro al blanco con precisión</a>
+    </div>
+  </div>
+</body>
+</html>

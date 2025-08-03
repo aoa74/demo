@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>¡Toca lo Correcto!</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #fce4ec, #e1f5fe);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    #instruction {
+      font-size: 18px;
+      background: #fff;
+      padding: 10px 20px;
+      border-radius: 15px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+
+    #emoji {
+      font-size: 100px;
+      cursor: pointer;
+      user-select: none;
+     -webkit-user-select: none; /* Soporte para Safari e iOS */
+     -ms-user-select: none;     /* Soporte para IE11/Edge */
+      transition: transform 0.2s ease;
+    }
+
+    #emoji:active {
+      transform: scale(0.9);
+    }
+
+    #message {
+      margin-top: 20px;
+      font-size: 16px;
+    }
+
+    #stats {
+      margin-top: 8px;
+      font-size: 14px;
+    }
+
+    button {
+      margin-top: 25px;
+      padding: 10px 22px;
+      border: none;
+      background-color: #7c4dff;
+      color: white;
+      font-weight: bold;
+      border-radius: 20px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #512da8;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>¡Toca lo Correcto!</h1>
+  <div id="instruction">Presiona iniciar</div>
+  <div id="emoji" style="display:none;">🍓</div>
+  <div id="message"></div>
+  <div id="stats"></div>
+  <button onclick="startGame()">Iniciar</button>
+
+  <script>
+    const instructionEl = document.getElementById("instruction");
+    const emojiEl = document.getElementById("emoji");
+    const messageEl = document.getElementById("message");
+    const statsEl = document.getElementById("stats");
+
+    const emojis = ["🍓", "🍌", "🍎", "🍕", "🐶", "🐱", "🌈", "👻", "🌻"];
+    let target = "";
+    let round = 0;
+    let score = 0;
+    let times = [];
+    let timer, startTime;
+    let currentEmoji = "";
+    let touchEnabled = false;
+    let maxTime = 2500; // milisegundos
+
+    function getRandomEmoji() {
+      return emojis[Math.floor(Math.random() * emojis.length)];
+    }
+
+    function startGame() {
+      round = 0;
+      score = 0;
+      times = [];
+      messageEl.textContent = "";
+      statsEl.textContent = "";
+      nextRound();
+    }
+
+    function nextRound() {
+      round++;
+      touchEnabled = false;
+      emojiEl.style.display = "none";
+
+      currentEmoji = getRandomEmoji();
+      target = getRandomEmoji();
+
+      instructionEl.textContent = `Toca solo si es ${target}`;
+
+      setTimeout(() => {
+        emojiEl.textContent = currentEmoji;
+        emojiEl.style.display = "block";
+        startTime = Date.now();
+        touchEnabled = true;
+
+        timer = setTimeout(() => {
+          if (currentEmoji === target) {
+            endGame("⏰ Tardaste demasiado");
+          } else {
+            // No tocó nada, y era lo correcto. Continuar.
+            nextRound();
+          }
+        }, maxTime - round * 80);
+      }, 1000);
+    }
+
+    emojiEl.addEventListener("click", () => {
+      if (!touchEnabled) return;
+      touchEnabled = false;
+      clearTimeout(timer);
+
+      const reactionTime = Date.now() - startTime;
+
+      if (currentEmoji === target) {
+        score++;
+        times.push(reactionTime);
+        nextRound();
+      } else {
+        endGame("❌ Tocaste el emoji equivocado");
+      }
+    });
+
+    function endGame(reason) {
+      touchEnabled = false;
+      emojiEl.style.display = "none";
+      messageEl.textContent = `${reason} | Puntos: ${score}`;
+      if (times.length) {
+        const avg = Math.round(times.reduce((a, b) => a + b, 0) / times.length);
+        statsEl.textContent = `Promedio de reacción: ${avg}ms`;
+      }
+    }
+  </script>
+</body>
+</html>

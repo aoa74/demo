@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Click Rush!</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(to bottom right, #ffe6f0, #e0f7fa);
+      font-family: 'Poppins', sans-serif;
+      overflow: hidden;
+    }
+
+    #gameArea {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    .circle {
+      width: 50px;
+      height: 50px;
+      background-color: #ff4081;
+      border-radius: 50%;
+      position: absolute;
+      cursor: pointer;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      animation: pop 0.3s ease-in-out;
+    }
+
+    @keyframes pop {
+      0% { transform: scale(0); }
+      100% { transform: scale(1); }
+    }
+
+    #scoreDisplay {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      font-size: 20px;
+      font-weight: bold;
+      background-color: rgba(255, 255, 255, 0.7);
+      padding: 10px 20px;
+      border-radius: 20px;
+      z-index: 10;
+    }
+
+    #endMessage {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 28px;
+      font-weight: bold;
+      color: #333;
+      background-color: #ffffffde;
+      padding: 30px 40px;
+      border-radius: 25px;
+      text-align: center;
+      display: none;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      animation: fadeIn 0.4s ease-in-out;
+    }
+
+    #restartBtn {
+      margin-top: 20px;
+      font-size: 16px;
+      padding: 12px 22px;
+      background-color: #ff80ab;
+      color: white;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    #restartBtn:hover {
+      background-color: #ff4081;
+    }
+
+    .new-record {
+      margin-top: 10px;
+      color: #4CAF50;
+      font-size: 16px;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
+      to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
+  </style>
+</head>
+<body>
+  <div id="gameArea">
+    <div id="scoreDisplay">Puntaje: 0</div>
+    <div id="endMessage">
+      <span id="finalScore">⏱️ Tiempo</span><br>
+      <div id="newRecord" class="new-record"></div>
+      <button id="restartBtn">🔁 Jugar otra vez</button>
+    </div>
+  </div>
+
+  <script>
+    const gameArea = document.getElementById("gameArea");
+    const scoreDisplay = document.getElementById("scoreDisplay");
+    const endMessage = document.getElementById("endMessage");
+    const finalScore = document.getElementById("finalScore");
+    const newRecord = document.getElementById("newRecord");
+    const restartBtn = document.getElementById("restartBtn");
+
+    let score = 0;
+    let gameInterval;
+    let gameTimeout;
+    const gameDuration = 15000;
+    const intervalTime = 750;
+
+    function createCircle() {
+      const circle = document.createElement("div");
+      circle.classList.add("circle");
+
+      const x = Math.random() * (window.innerWidth - 60);
+      const y = Math.random() * (window.innerHeight - 60);
+
+      circle.style.left = `${x}px`;
+      circle.style.top = `${y}px`;
+
+      circle.addEventListener("click", () => {
+        score++;
+        scoreDisplay.textContent = `Puntaje: ${score}`;
+        circle.remove();
+      });
+
+      gameArea.appendChild(circle);
+
+      setTimeout(() => {
+        if (circle.parentNode) circle.remove();
+      }, 1000);
+    }
+
+    function startGame() {
+      score = 0;
+      scoreDisplay.textContent = "Puntaje: 0";
+      endMessage.style.display = "none";
+      newRecord.textContent = "";
+
+      gameInterval = setInterval(createCircle, intervalTime);
+
+      gameTimeout = setTimeout(() => {
+        clearInterval(gameInterval);
+        document.querySelectorAll(".circle").forEach(c => c.remove());
+
+        const best = localStorage.getItem("bestScore") || 0;
+        if (score > best) {
+          localStorage.setItem("bestScore", score);
+          newRecord.textContent = "🏆 ¡Nuevo récord personal!";
+        }
+
+        finalScore.innerHTML = `⏱️ ¡Tiempo!<br>Tu puntaje final es <strong>${score}</strong><br><small>Mejor puntaje: ${Math.max(score, best)}</small>`;
+        endMessage.style.display = "block";
+      }, gameDuration);
+    }
+
+    restartBtn.addEventListener("click", () => {
+      clearInterval(gameInterval);
+      clearTimeout(gameTimeout);
+      document.querySelectorAll(".circle").forEach(c => c.remove());
+      startGame();
+    });
+
+    window.onload = startGame;
+  </script>
+</body>
+</html>

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tiro al Blanco</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #e1f5fe, #fce4ec);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      cursor: crosshair;
+    }
+    canvas {
+      border: 3px solid #7e57c2;
+      background-color: white;
+    }
+    #hud {
+      display: flex;
+      justify-content: space-between;
+      width: 400px;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    #modal {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 20px 30px;
+      border-radius: 15px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.3);
+      display: none;
+      text-align: center;
+    }
+    #modal h2 {
+      margin-bottom: 10px;
+    }
+    #modal button {
+      padding: 10px 20px;
+      background-color: #7e57c2;
+      color: white;
+      border: none;
+      border-radius: 20px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas" width="400" height="500"></canvas>
+  <div id="hud">
+    <div id="score">🎯 Puntos: 0</div>
+    <div id="fails">Fallos: 💔💔💔</div>
+  </div>
+  <div id="modal">
+    <h2>Juego Terminado</h2>
+    <p id="finalResult"></p>
+    <button onclick="startGame()">Reintentar</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const scoreDisplay = document.getElementById("score");
+    const failsDisplay = document.getElementById("fails");
+    const modal = document.getElementById("modal");
+    const finalResult = document.getElementById("finalResult");
+
+    let score = 0;
+    let fails = 0;
+    let target = {};
+    let gameActive = true;
+    let timer;
+
+    function drawTarget(x, y, r) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, 2 * Math.PI);
+      ctx.fillStyle = "#f06292";
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(x, y, r * 0.6, 0, 2 * Math.PI);
+      ctx.fillStyle = "#ba68c8";
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(x, y, r * 0.3, 0, 2 * Math.PI);
+      ctx.fillStyle = "#4db6ac";
+      ctx.fill();
+    }
+
+    function spawnTarget() {
+      const r = 40 - Math.floor(score / 5) * 5; // reduce size
+      const x = r + Math.random() * (canvas.width - 2 * r);
+      const y = r + Math.random() * (canvas.height - 2 * r);
+      target = { x, y, r };
+      drawTarget(x, y, r);
+
+      clearTimeout(timer);
+      const nextTime = 2000 - score * 40;
+      timer = setTimeout(() => {
+        registerFail();
+        spawnTarget();
+      }, Math.max(nextTime, 600));
+    }
+
+    function handleClick(e) {
+      if (!gameActive) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const dx = x - target.x;
+      const dy = y - target.y;
+
+      if (Math.sqrt(dx * dx + dy * dy) < target.r * 0.6) {
+        score++;
+        scoreDisplay.textContent = `🎯 Puntos: ${score}`;
+        spawnTarget();
+      } else {
+        registerFail();
+        spawnTarget();
+      }
+    }
+
+    function registerFail() {
+      fails++;
+      const hearts = "💔".repeat(3 - fails) + "❌".repeat(fails);
+      failsDisplay.textContent = `Fallos: ${hearts}`;
+
+      if (fails >= 3) {
+        endGame();
+      }
+    }
+
+    function endGame() {
+      gameActive = false;
+      clearTimeout(timer);
+      modal.style.display = "block";
+      finalResult.textContent = `Tu puntaje final fue ${score} 🎯`;
+    }
+
+    function startGame() {
+      modal.style.display = "none";
+      score = 0;
+      fails = 0;
+      gameActive = true;
+      scoreDisplay.textContent = `🎯 Puntos: 0`;
+      failsDisplay.textContent = `Fallos: 💔💔💔`;
+      spawnTarget();
+    }
+
+    canvas.addEventListener("click", handleClick);
+    startGame();
+  </script>
+</body>
+</html>

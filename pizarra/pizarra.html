@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pizarra Mágica</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: 'DM Sans', sans-serif;
+      background: linear-gradient(to top right, #fff0f5, #e6f7ff);
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 0;
+    }
+
+    .menu {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 10;
+      display: flex;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.85);
+      padding: 12px 20px;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+      align-items: center;
+    }
+    
+
+    button {
+      background-color: #ffd6f6;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      color: #222;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background-color: #fcb8e2;
+    }
+
+    input[type="color"] {
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      padding: 0;
+      cursor: pointer;
+      box-shadow: inset 0 0 3px #aaa;
+    }
+
+    select {
+      border: none;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-weight: bold;
+      background-color: #fff0fa;
+      color: #444;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    select:hover {
+      background-color: #ffe0f4;
+    }
+
+    #saveBtn {
+      background-color: #ccffe6;
+    }
+
+    #saveBtn:hover {
+      background-color: #a6f2d5;
+    }
+
+    .stickers {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      z-index: 10;
+      background: rgba(255, 255, 255, 0.85);
+      padding: 10px 16px;
+      border-radius: 14px;
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.1);
+      display: flex;
+      gap: 10px;
+    }
+
+    .sticker {
+      width: 40px;
+      height: 40px;
+      cursor: grab;
+      user-select: none;
+     -webkit-user-select: none; /* Soporte para Safari e iOS */
+     -ms-user-select: none;     /* Soporte para IE11/Edge */
+      transition: transform 0.2s;
+    }
+
+    .sticker:active {
+      transform: scale(1.2);
+    }
+
+    .placed-sticker {
+      position: absolute;
+      font-size: 1.8rem;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    #musicBtn.playing {
+      background-color: #f0b895;
+      color: #155e5c;
+    }
+
+    #textBtn.playing {
+    background-color: #f0bff7 !important;
+    color: #2d0f2d !important;
+    border: 2px solid #ce78e0;
+    }
+
+    #saveEffect {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 9999;
+    overflow: hidden;
+    }
+
+    .confetti {
+    position: absolute;
+    font-size: 1.2rem;
+    animation: pop 1s ease-out forwards;
+    opacity: 0;
+    }
+
+    @keyframes pop {
+    0% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-50vh) rotate(360deg) scale(0.5);
+        opacity: 0;
+    }
+    }
+
+     /* NUEVO: menú vertical en móvil */
+  @media (max-width: 768px) {
+    .menu {
+      top: auto;
+      bottom: 20px;
+      left: 20px;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px 10px;
+      gap: 10px;
+    }
+
+    .menu button,
+    .menu select,
+    .menu input[type="color"] {
+      width: 48px;
+      height: 48px;
+      padding: 0;
+      font-size: 1.2rem;
+      text-align: center;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .menu button {
+      white-space: nowrap;
+      text-indent: -9999px; /* oculta texto */
+      position: relative;
+    }
+
+    .menu button::before {
+      content: attr(title);
+      text-indent: 0;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1.2rem;
+      text-indent: 0;
+    }
+
+    .menu select option {
+      font-size: 0.9rem;
+    }
+
+    .menu select,
+    .menu input[type="color"] {
+      padding: 0;
+    }
+  }
+
+  </style>
+</head>
+
+<div id="saveEffect"></div>
+
+<div id="musicNotice" style="
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff0f5;
+  color: #444;
+  padding: 12px 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  font-weight: bold;
+  display: none;
+  z-index: 20;
+">
+  🎶 Música activada
+</div>
+
+<body>
+
+  <canvas id="canvas"></canvas>
+
+  <div class="menu-icon-bar">
+  <button id="clearBtn" title="Limpiar la pizarra">🧼</button>
+
+  <label title="Color de pincel">
+    <input type="color" id="colorPicker" title="Color de pincel"/>
+  </label>
+
+  <label title="Estilo de pincel">
+    <select id="brushStyle" title="Estilo pincel">
+      <option value="normal">🎨</option>
+      <option value="rainbow">🌈</option>
+      <option value="glitter">✨</option>
+      <option value="stars">⭐</option>
+    </select>
+  </label>
+
+  <label title="Tamaño del pincel">
+    <select id="brushSize" title="Tamaño pincel">
+      <option value="2">🖋️</option>
+      <option value="5" selected>🖌️</option>
+      <option value="10">🖍️</option>
+    </select>
+  </label>
+
+  <button id="saveBtn" title="Guardar mi dibujo">💾</button>
+  <button id="musicBtn" title="Música">🎧</button>
+  <button id="textBtn" title="Agregar texto">📝</button>
+
+  <label title="Fondo">
+    <select id="bgSelector" title="Selector">
+      <option value="none">⬜</option>
+      <option value="pastel1">🌸</option>
+      <option value="pastel2">🌈</option>
+      <option value="grid">📐</option>
+    </select>
+  </label>
+</div>
+
+<style>
+.menu-icon-bar {
+  position: fixed;
+  top: 20px;
+  left: 12px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.6);
+  padding: 10px;
+  border-radius: 20px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  align-items: center;
+}
+
+.menu-icon-bar button,
+.menu-icon-bar select,
+.menu-icon-bar input[type="color"] {
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  text-align: center;
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  background-color: white;
+  transition: background 0.2s;
+  appearance: none;
+  -webkit-appearance: none;
+  text-align-last: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.menu-icon-bar label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: white;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.menu-icon-bar button:hover,
+.menu-icon-bar select:hover,
+.menu-icon-bar label:hover {
+  background-color: #ffe0f4;
+}
+
+.menu-icon-bar input[type="color"] {
+  padding: 0;
+  border-radius: 50%;
+  border: none;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  background: none;
+  display: block;
+  margin: auto;
+}
+
+.menu-icon-bar select {
+  padding: 0;
+  font-size: 22px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+</style>
+
+
+  <div class="stickers">
+    <img src="https://twemoji.maxcdn.com/v/latest/svg/1f338.svg" class="sticker" alt="🌸" draggable="true">
+    <img src="https://twemoji.maxcdn.com/v/latest/svg/1f31f.svg" class="sticker" alt="🌟" draggable="true">
+    <img src="https://twemoji.maxcdn.com/v/latest/svg/1f495.svg" class="sticker" alt="💖" draggable="true">
+    <img src="https://twemoji.maxcdn.com/v/latest/svg/1f43e.svg" class="sticker" alt="🐾" draggable="true">
+    <img src="https://twemoji.maxcdn.com/v/latest/svg/1f98b.svg" class="sticker" alt="🦋" draggable="true">
+  </div>
+
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let drawing = false;
+    let brushColor = document.getElementById("colorPicker").value;
+    let brushStyle = document.getElementById("brushStyle").value;
+    let brushSize = document.getElementById("brushSize").value;
+
+    let placedStickers = [];
+
+    document.getElementById("brushSize").addEventListener("change", (e) => {
+      brushSize = e.target.value;
+    });
+
+    document.getElementById("colorPicker").addEventListener("input", (e) => {
+      brushColor = e.target.value;
+    });
+
+    document.getElementById("brushStyle").addEventListener("change", (e) => {
+      brushStyle = e.target.value;
+    });
+
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      placedStickers = [];
+    });
+
+    document.getElementById("saveBtn").addEventListener("click", () => {
+      drawAll();
+      const link = document.createElement("a");
+      link.download = "mi_arte_magico.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+      triggerSaveEffect(); 
+    });
+
+    function getRandomPastelColor() {
+      const hue = Math.floor(Math.random() * 360);
+      return `hsl(${hue}, 100%, 85%)`;
+    }
+
+    function drawParticle(x, y, color) {
+      for (let i = 0; i < 5; i++) {
+        const radius = Math.random() * 2 + 1;
+        const dx = (Math.random() - 0.5) * 20;
+        const dy = (Math.random() - 0.5) * 20;
+        ctx.beginPath();
+        ctx.arc(x + dx, y + dy, radius, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+      }
+    }
+
+    function drawStar(x, y) {
+      const star = new Path2D();
+      const size = 5 + Math.random() * 4;
+      const spikes = 5;
+      const outerRadius = size;
+      const innerRadius = size / 2;
+      let rot = Math.PI / 2 * 3;
+      let cx = x;
+      let cy = y;
+      let step = Math.PI / spikes;
+
+      star.moveTo(cx, cy - outerRadius);
+      for (let i = 0; i < spikes; i++) {
+        cx = x + Math.cos(rot) * outerRadius;
+        cy = y + Math.sin(rot) * outerRadius;
+        star.lineTo(cx, cy);
+        rot += step;
+
+        cx = x + Math.cos(rot) * innerRadius;
+        cy = y + Math.sin(rot) * innerRadius;
+        star.lineTo(cx, cy);
+        rot += step;
+      }
+      star.lineTo(x, y - outerRadius);
+      star.closePath();
+
+      ctx.fillStyle = getRandomPastelColor();
+      ctx.fill(star);
+    }
+
+    function draw(e) {
+      if (!drawing) return;
+
+      let currentColor = brushColor;
+      if (brushStyle === "rainbow") {
+        currentColor = getRandomPastelColor();
+      }
+
+      ctx.lineWidth = brushSize;
+      ctx.lineCap = "round";
+      ctx.strokeStyle = currentColor;
+
+      ctx.lineTo(e.clientX, e.clientY);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(e.clientX, e.clientY);
+
+      if (brushStyle === "glitter") {
+        drawParticle(e.clientX, e.clientY, "rgba(255, 192, 203, 0.6)");
+        drawParticle(e.clientX, e.clientY, "rgba(255, 255, 255, 0.4)");
+      } else if (brushStyle === "stars") {
+        drawStar(e.clientX, e.clientY);
+      }
+    }
+
+    canvas.addEventListener("mousedown", (e) => {
+      drawing = true;
+      ctx.beginPath();
+      ctx.moveTo(e.clientX, e.clientY);
+    });
+
+    canvas.addEventListener("mouseup", () => {
+      drawing = false;
+    });
+
+    canvas.addEventListener("mousemove", draw);
+
+    // stickers
+    const stickers = document.querySelectorAll(".sticker");
+
+    stickers.forEach((sticker) => {
+      sticker.addEventListener("dragstart", (e) => {
+        e.dataTransfer.setData("image-url", sticker.src);
+      });
+    });
+
+    canvas.addEventListener("dragover", (e) => {
+      e.preventDefault();
+    });
+
+    canvas.addEventListener("drop", (e) => {
+      e.preventDefault();
+      const src = e.dataTransfer.getData("image-url");
+      const x = e.clientX;
+      const y = e.clientY;
+      const stickerImg = new Image();
+
+      stickerImg.crossOrigin = "anonymous"; 
+      
+      stickerImg.src = src;
+      stickerImg.onload = () => {
+        placedStickers.push({ img: stickerImg, x: x, y: y, size: 40 });
+        drawAll();
+      };
+    });
+
+    function drawAll() {
+     // Captura temporal del canvas actual (con dibujos)
+        const tempCanvas = document.createElement("canvas");
+        tempCanvas.width = canvas.width;
+        tempCanvas.height = canvas.height;
+        const tempCtx = tempCanvas.getContext("2d");
+        tempCtx.drawImage(canvas, 0, 0);
+
+        // Limpia el canvas original
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Redibuja todo lo que había dibujado
+        ctx.drawImage(tempCanvas, 0, 0);
+
+        // Ahora sí, dibuja los stickers
+        placedStickers.forEach((s) => {
+            ctx.drawImage(s.img, s.x - 20, s.y - 20, s.size, s.size);
+        });
+    }
+
+    canvas.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
+      const x = e.clientX;
+      const y = e.clientY;
+      for (let i = placedStickers.length - 1; i >= 0; i--) {
+        const s = placedStickers[i];
+        if (
+          x >= s.x - s.size / 2 &&
+          x <= s.x + s.size / 2 &&
+          y >= s.y - s.size / 2 &&
+          y <= s.y + s.size / 2
+        ) {
+          placedStickers.splice(i, 1);
+          drawAll();
+          return;
+        }
+      }
+    });
+
+    // Música
+    const audio = document.createElement("audio");
+    audio.src = "../assets/alas_soy_luna.mp3";
+    audio.loop = true;
+
+    const musicBtn = document.getElementById("musicBtn");
+
+    musicBtn.addEventListener("click", () => {
+    if (audio.paused) {
+        audio.play().then(() => {
+        musicBtn.classList.add("playing");
+        musicBtn.textContent = "⏸️";
+        showMusicNotice("🎶 Música activada");
+        }).catch((error) => {
+        // Solo muestra la alerta si el error tiene que ver con reproducción bloqueada
+        if (error.name === "NotAllowedError") {
+            alert("El navegador bloqueó la reproducción automática. Intenta de nuevo.");
+        }
+        console.error(error);
+        });
+    } else {
+        audio.pause();
+        musicBtn.classList.remove("playing");
+        musicBtn.textContent = "🎧";
+        showMusicNotice("🔇 Música pausada");
+    }
+    });
+
+    window.addEventListener("resize", () => {
+      const tempCanvas = document.createElement("canvas");
+      tempCanvas.width = canvas.width;
+      tempCanvas.height = canvas.height;
+      const tempCtx = tempCanvas.getContext("2d");
+      tempCtx.drawImage(canvas, 0, 0);
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      ctx.drawImage(tempCanvas, 0, 0);
+      drawAll();
+    });
+
+    const musicNotice = document.getElementById("musicNotice");
+
+    function showMusicNotice(message) {
+        musicNotice.textContent = message;
+        musicNotice.style.display = "block";
+        setTimeout(() => {
+            musicNotice.style.display = "none";
+        }, 2000);
+    }
+
+    let addingText = false;
+
+    const textBtn = document.getElementById("textBtn");
+    textBtn.addEventListener("click", () => {
+    addingText = !addingText;
+    textBtn.classList.toggle("playing", addingText);
+    textBtn.textContent = addingText ? "🔤 ..." : "📝 ";
+    });
+
+    canvas.addEventListener("click", (e) => {
+    if (!addingText) return;
+    const userText = prompt("¿Qué quieres escribir?");
+    if (userText) {
+        ctx.font = `${Math.max(16, brushSize * 6)}px DM Sans`;
+        ctx.fillStyle = brushColor;
+        ctx.fillText(userText, e.clientX, e.clientY);
+    }
+    });
+
+    const bgSelector = document.getElementById("bgSelector");
+
+    bgSelector.addEventListener("change", () => {
+    const value = bgSelector.value;
+    switch (value) {
+        case "none":
+        canvas.style.background = "#ffffff";
+        break;
+        case "pastel1":
+        canvas.style.background = "linear-gradient(to bottom right, #ffeaf4, #e6f7ff)";
+        break;
+        case "pastel2":
+        canvas.style.background = "linear-gradient(to bottom left, #fce3ec, #deeaf6)";
+        break;
+        case "grid":
+        canvas.style.background = "url('https://www.transparenttextures.com/patterns/cubes.png')";
+        break;
+    }
+    });
+
+    bgSelector.value = "pastel1";
+    bgSelector.dispatchEvent(new Event("change"));
+
+    const saveEffect = document.getElementById("saveEffect");
+    const confettiShapes = ["✨", "🌟", "💫", "🌸", "💖"];
+
+    function triggerSaveEffect() {
+    for (let i = 0; i < 25; i++) {
+        const span = document.createElement("span");
+        span.className = "confetti";
+        span.textContent = confettiShapes[Math.floor(Math.random() * confettiShapes.length)];
+        span.style.left = Math.random() * 100 + "vw";
+        span.style.top = "60%";
+        span.style.fontSize = (1 + Math.random() * 1.5) + "rem";
+        span.style.color = `hsl(${Math.random() * 360}, 100%, 80%)`;
+
+        saveEffect.appendChild(span);
+
+        setTimeout(() => {
+        span.remove();
+        }, 1000);
+    }
+    }
+
+  </script>
+</body>
+</html>
