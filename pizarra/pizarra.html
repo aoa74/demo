@@ -483,6 +483,47 @@
 
     canvas.addEventListener("mousemove", draw);
 
+      // Soporte táctil para dispositivos móviles
+    canvas.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      drawing = true;
+      const touch = e.touches[0];
+      ctx.beginPath();
+      ctx.moveTo(touch.clientX, touch.clientY);
+    });
+
+    canvas.addEventListener("touchmove", (e) => {
+      e.preventDefault();
+      if (!drawing) return;
+      const touch = e.touches[0];
+
+      let currentColor = brushColor;
+      if (brushStyle === "rainbow") {
+        currentColor = getRandomPastelColor();
+      }
+
+      ctx.lineWidth = brushSize;
+      ctx.lineCap = "round";
+      ctx.strokeStyle = currentColor;
+
+      ctx.lineTo(touch.clientX, touch.clientY);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(touch.clientX, touch.clientY);
+
+      if (brushStyle === "glitter") {
+        drawParticle(touch.clientX, touch.clientY, "rgba(255, 192, 203, 0.6)");
+        drawParticle(touch.clientX, touch.clientY, "rgba(255, 255, 255, 0.4)");
+      } else if (brushStyle === "stars") {
+        drawStar(touch.clientX, touch.clientY);
+      }
+    });
+
+    canvas.addEventListener("touchend", () => {
+      drawing = false;
+    });
+
+
     // stickers
     const stickers = document.querySelectorAll(".sticker");
 
